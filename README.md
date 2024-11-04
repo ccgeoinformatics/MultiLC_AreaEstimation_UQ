@@ -37,7 +37,7 @@ git clone https://github.com/ccgeoinformatics/BinaryLC_AreaEstimation_UQ.git
 cd BinaryLC_AreaEstimation_UQ
 ```
 ### Option 2: Download as a ZIP File
-1. Go to the [repository on GitHub](https://github.com/ccgeoinformatics/MultiLC_AreaEstimation_UQ)).
+1. Go to the [repository on GitHub](https://github.com/ccgeoinformatics/MultiLC_AreaEstimation_UQ).
 2. Click on the "Code" button.
 3. Select "Download ZIP" and extract the downloaded file.
 

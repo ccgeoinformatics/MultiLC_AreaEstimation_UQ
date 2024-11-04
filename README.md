@@ -33,7 +33,7 @@ This repository provides a tool for assessing the accuracy of multi-class land c
 Download the repository using Git:
 
 ```bash
-git clone https://github.com/ccgeoinformatics/BinaryLC_AreaEstimation_UQ.git
+git clone [https://github.com/ccgeoinformatics/BinaryLC_AreaEstimation_UQ](https://github.com/ccgeoinformatics/MultiLC_AreaEstimation_UQ).git
 cd BinaryLC_AreaEstimation_UQ
 ```
 ### Option 2: Download as a ZIP File

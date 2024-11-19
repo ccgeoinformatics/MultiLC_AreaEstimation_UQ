@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: MultiLC_AreaEstimation_UQ - A Python package for multi-class land cover map accuracy assessment, area estimation, and uncertainty quantification
+title: MultiLC_AreaEstimation_UQ - A Python-based tool for multi-class land cover map accuracy assessment, area estimation, and uncertainty quantification
 message: "If you use this software, please cite it as follows."
 authors:
   - name: "Jojene R. Santillan"

@@ -64,7 +64,7 @@ def convert_to_area_proportion(error_matrix, weights):
         area_proportion_matrix[i, :] = weights[i] * (error_matrix[i, :] / row_total) if row_total != 0 else 0
     return area_proportion_matrix
 
-def calculate_accuracy_metrics(area_proportion_matrix, error_matrix, weights, confidence_level=0.95):
+def calculate_accuracy_metrics(area_proportion_matrix, error_matrix, weights, mapped_pixels, confidence_level=0.95):
     q = area_proportion_matrix.shape[0]
     user_accuracy, user_accuracy_se, user_accuracy_ci_lower, user_accuracy_ci_upper, user_accuracy_ci_value = ([] for _ in range(5))
     producer_accuracy, producer_accuracy_se, producer_accuracy_ci_lower, producer_accuracy_ci_upper, producer_accuracy_ci_value = ([] for _ in range(5))
@@ -77,7 +77,7 @@ def calculate_accuracy_metrics(area_proportion_matrix, error_matrix, weights, co
         p_i_dot = area_proportion_matrix[i, :].sum()
         U_i = p_ii / p_i_dot if p_i_dot != 0 else 0
         user_accuracy.append(U_i)
-        
+
         n_i_dot = error_matrix[i, :].sum()
         if n_i_dot > 1:
             variance_U_i = U_i * (1 - U_i) / (n_i_dot - 1)
@@ -94,22 +94,37 @@ def calculate_accuracy_metrics(area_proportion_matrix, error_matrix, weights, co
             user_accuracy_ci_upper.append(0)
             user_accuracy_ci_value.append(0)
 
-    # Producer's accuracy calculations
+    # Producer's accuracy calculations (corrected using Olofsson et al. 2014 Eq. 7)
+    total_mapped_pixels = np.sum(mapped_pixels)
     for j in range(q):
         p_jj = area_proportion_matrix[j, j]
         p_dot_j = area_proportion_matrix[:, j].sum()
         P_j = p_jj / p_dot_j if p_dot_j != 0 else 0
         producer_accuracy.append(P_j)
-        
-        n_dot_j = error_matrix[:, j].sum()
-        if n_dot_j > 1:
-            variance_P_j = (1 / n_dot_j ** 2) * (
-                (n_dot_j ** 2 * (1 - P_j) ** 2 * U_i * (1 - U_i)) / (n_i_dot - 1)
-                + P_j ** 2 * sum(
-                    (error_matrix[i, j] / n_i_dot) * (1 - (error_matrix[i, j] / n_i_dot)) / (n_i_dot - 1)
-                    for i in range(q) if i != j
-                )
-            )
+
+        # Compute N̂_.j = sum_i (N_i / n_i) * n_ij
+        N_hat_dotj = 0.0
+        for i in range(q):
+            n_i_dot = error_matrix[i, :].sum()
+            if n_i_dot > 0:
+                N_hat_dotj += (mapped_pixels[i] / n_i_dot) * error_matrix[i, j]
+
+        if N_hat_dotj > 0:
+            first_term = 0.0
+            n_j_dot = error_matrix[j, :].sum()
+            if n_j_dot > 1:
+                U_j = user_accuracy[j]
+                first_term = (mapped_pixels[j] ** 2 * (1 - P_j) ** 2 * U_j * (1 - U_j)) / (n_j_dot - 1)
+
+            second_term = 0.0
+            for i in range(q):
+                if i != j:
+                    n_i_dot = error_matrix[i, :].sum()
+                    if n_i_dot > 1:
+                        p_ij = error_matrix[i, j] / n_i_dot
+                        second_term += (mapped_pixels[i] ** 2 * p_ij * (1 - p_ij)) / (n_i_dot - 1)
+
+            variance_P_j = (1 / (N_hat_dotj ** 2)) * (first_term + P_j ** 2 * second_term)
             se_P_j = np.sqrt(variance_P_j)
             producer_accuracy_se.append(se_P_j)
             ci_lower = P_j - z_score * se_P_j
@@ -217,7 +232,8 @@ def run_analysis():
         weights = calculate_weights(mapped_pixels)
         area_proportion_matrix = convert_to_area_proportion(error_matrix, weights)
         total_area = np.sum(mapped_pixels) * pixel_size ** 2
-        accuracy_metrics = calculate_accuracy_metrics(area_proportion_matrix, error_matrix, weights)
+        accuracy_metrics = calculate_accuracy_metrics(area_proportion_matrix, error_matrix, weights, mapped_pixels)
+        #accuracy_metrics = calculate_accuracy_metrics(area_proportion_matrix, error_matrix, weights)
         error_adjusted_area = calculate_error_adjusted_area(area_proportion_matrix, total_area)
 
         # Define z-score for 95% confidence level
